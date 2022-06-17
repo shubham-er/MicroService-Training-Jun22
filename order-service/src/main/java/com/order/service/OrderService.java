@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,6 +24,11 @@ public class OrderService {
 	@Autowired
 	EmailApi emailApi;
 	
+	@Autowired
+	JmsTemplate jmsTemplate;
+	
+	private static final String MESSAGE_QUEUE = "order_queue";
+	
 	public void save(OrderVO order) {
 		//ResponseEntity<String> response = restTemplate.getForEntity("http://EMAIL/email", String.class);
 		String response = emailApi.sendMail();
@@ -31,8 +37,13 @@ public class OrderService {
 	}
 
 	public List<OrderVO> fndAll(){
-		ResponseEntity<String> response = restTemplate.getForEntity("http://EMAIL/email", String.class);
-		System.out.println(response.getBody());
-		return orderRepo.findAll();
+		//ResponseEntity<String> response = restTemplate.getForEntity("http://EMAIL/email", String.class);
+		
+
+		List<OrderVO> orders =  orderRepo.findAll();
+		
+		jmsTemplate.convertAndSend(MESSAGE_QUEUE, orders);
+		//System.out.println(response.getBody());
+		return orders;
 	}
 }
